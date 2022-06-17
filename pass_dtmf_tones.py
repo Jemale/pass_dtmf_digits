@@ -24,10 +24,10 @@ import subprocess
 
 
 #=================================================================
-# Set these variables 
+# Set these variables
 #=================================================================
-PHONE_NUMBER = "xxxxxxx" # Enter the Phone number that you want to dial
-DTMF_DIGITS = "xxxx" # Enter the DTMF digits that you want to pass (valid options: 0-9, * and #)
+PHONE_NUMBER = "2055453771" # Enter the Phone number that you want to dial
+DTMF_DIGITS = "1234" # Enter the DTMF digits that you want to pass (valid options: 0-9, * and #)
 #=================================================================
 
 
@@ -72,6 +72,7 @@ def detect_COM_port():
 	# Find the right port associated with the Voice Modem
 	for com_port in com_ports_list:
 		if 'tty' in com_port:
+                        print "processing " + com_port
 			#Try to open the COM Port and execute AT Command
 			try:
 				# Set the COM Port Settings
@@ -81,7 +82,10 @@ def detect_COM_port():
 				print "Unable to open COM Port: " + com_port
 				pass
 			else:
-				#Try to put Modem in Voice Mode
+			    	if not exec_AT_cmd("AT&F0"):
+                                    print "Error: Unable reset to factory default"
+
+                                #Try to put Modem in Voice Mode
 				if not exec_AT_cmd("AT+FCLASS=8", "OK"):
 					print "Error: Failed to put modem into voice mode."
 					if analog_modem.isOpen():
@@ -119,10 +123,10 @@ def init_modem_settings():
 			print "Error: Unable to access the Modem"
 
 		# reset to factory default.
-		if not exec_AT_cmd("ATZ3"):
-			print "Error: Unable reset to factory default"			
-			
-		# Display result codes in verbose form 	
+		if not exec_AT_cmd("AT&F0"):
+			print "Error: Unable reset to factory default"
+
+		# Display result codes in verbose form
 		if not exec_AT_cmd("ATV1"):
 			print "Error: Unable set response in verbose form"	
 
@@ -307,6 +311,40 @@ def dial_n_pass_dtmf(phone_number, dtmf_digits):
 #=================================================================
 
 
+#=================================================================
+# Forever loop to check and print ring counter
+#=================================================================
+def count_rings():
+    print "Counting rings"
+    if not exec_AT_cmd("ATS1?"):
+        print "Error: Failed to check ring counter"
+
+
+
+def signal_door():
+    while(True):
+        # Check if modem connected
+        pass
+        # Send digit '6'
+
+        # Close connection
+
+        # Sleep
+
+def do_work():
+    while True:
+        resp = read_AT_cmd_response(allow_timeout = False)
+        if resp:
+            print "Answering..."
+            if not exec_AT_cmd("ATA"):
+                print "Error: Failed to answer call..."
+
+            print "Pressing '6' ..."
+            pass_dtmf_digits("6")
+
+            print "Hanging up ..."
+            if not exec_AT_cmd("ATH"):
+                print "Error: Failed to hang up call..."
 
 #=================================================================
 # Close the Serial Port
@@ -316,6 +354,7 @@ def close_modem_port():
 	# Try to close any active call
 	try:
 		exec_AT_cmd("ATH")
+                print "Hung up"
 	except:
 		pass
 
@@ -330,15 +369,16 @@ def close_modem_port():
 #=================================================================
 
 
+#close_modem_port()
+
 # Main Function
 init_modem_settings()
 
 # Close the Modem Port when the program terminates
 atexit.register(close_modem_port)
 
-# Dial the number and pass the DTMF Digits 
-dial_n_pass_dtmf(PHONE_NUMBER, DTMF_DIGITS)
+# Dial the number and pass the DTMF Digits
+# dial_n_pass_dtmf(PHONE_NUMBER, DTMF_DIGITS)
 
-
-
+#count_rings()
 
