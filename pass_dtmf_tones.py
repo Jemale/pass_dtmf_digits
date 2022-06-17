@@ -104,7 +104,7 @@ def detect_COM_port():
 # Initialize Modem
 #=================================================================
 def init_modem_settings():
-	
+
 	# Detect and Open the Modem Serial COM Port
 	try:
 		detect_COM_port()
@@ -128,16 +128,16 @@ def init_modem_settings():
 
 		# Display result codes in verbose form
 		if not exec_AT_cmd("ATV1"):
-			print "Error: Unable set response in verbose form"	
+			print "Error: Unable set response in verbose form"
 
 		# Enable Command Echo Mode.
 		if not exec_AT_cmd("ATE1"):
-			print "Error: Failed to enable Command Echo Mode"		
+			print "Error: Failed to enable Command Echo Mode"
 
 		# Enable formatted caller report.
 		if not exec_AT_cmd("AT+VCID=1"):
 			print "Error: Failed to enable formatted caller report."
-			
+
 		# Flush any existing input outout data from the buffers
 		analog_modem.flushInput()
 		analog_modem.flushOutput()
@@ -153,17 +153,17 @@ def init_modem_settings():
 # Execute AT Commands at the Modem
 #=================================================================
 def exec_AT_cmd(modem_AT_cmd, expected_response="OK"):
-	
+
 	global disable_modem_event_listener
 	disable_modem_event_listener = True
-	
+
 	try:
 		# Send command to the Modem
 		analog_modem.write((modem_AT_cmd + "\r").encode())
 
 		# Read Modem response
 		execution_status = read_AT_cmd_response(expected_response)
-		
+
 		disable_modem_event_listener = False
 
 		# Return command execution status
@@ -172,7 +172,7 @@ def exec_AT_cmd(modem_AT_cmd, expected_response="OK"):
 	except:
 		disable_modem_event_listener = False
 		print "Error: Failed to execute the command"
-		return False		
+		return False
 #=================================================================
 
 
@@ -181,7 +181,7 @@ def exec_AT_cmd(modem_AT_cmd, expected_response="OK"):
 # Read AT Command Response from the Modem
 #=================================================================
 def read_AT_cmd_response(expected_response="OK"):
-	
+
 	# Set the auto timeout interval
 	start_time = datetime.now()
 
@@ -237,7 +237,7 @@ def pass_dtmf_digits(dtmf_digits):
 				  '9':['852','1477'],
 				  '0':['941','1336'],
 				  '*':['941','1209'],
-				  '#':['941','1477']	
+				  '#':['941','1477']
 				}
 
 
@@ -250,8 +250,8 @@ def pass_dtmf_digits(dtmf_digits):
 		freq2 = DTMF_TONES_FREQUENCIES[dtmf_digit][1]
 		if not exec_AT_cmd("AT+VTS=[" + freq1 + "," + freq2 + "," + str(DTMF_TONE_DURATION) + "]"):
 			print "Error: Failed to pass DTMF Digit : " + str(digit)
-		
-		time.sleep(GAP_BETWEEN_TWO_DTMF_DIGITS)		
+
+		time.sleep(GAP_BETWEEN_TWO_DTMF_DIGITS)
 #=================================================================
 
 
@@ -261,12 +261,12 @@ def pass_dtmf_digits(dtmf_digits):
 #=================================================================
 def dial_n_pass_dtmf(phone_number, dtmf_digits):
 
-	# Set number of seconds modem waits before dialling. 
+	# Set number of seconds modem waits before dialling.
 	# If Xn is set to X2 or X4, this is time-out length if no dial tone.
 	if not exec_AT_cmd("ATS6=2"):
 		print "Error: Failed to set S6 Register value..."
 
-	# Set number of seconds modem waits for a carrier. 
+	# Set number of seconds modem waits for a carrier.
 	# May be increased as needed, for example to allow modem time to establish an international connection.
 	if not exec_AT_cmd("ATS7=30"):
 		print "Error: Failed to set S7 Register value..."
@@ -275,8 +275,8 @@ def dial_n_pass_dtmf(phone_number, dtmf_digits):
 	if not exec_AT_cmd("ATS8=1"):
 		print "Error: Failed to set S8 Register value..."
 
-	# Sets duration, in tenths of a second, that modem waits to hang up after loss of carrier. 
-	# This guard time allows your modem to distinguish a line disturbance from a true disconnect (hang up) by the remote modem. 
+	# Sets duration, in tenths of a second, that modem waits to hang up after loss of carrier.
+	# This guard time allows your modem to distinguish a line disturbance from a true disconnect (hang up) by the remote modem.
 	# Note: If you set S10 = 255, the modem will not hang up when carrier is lost. Dropping DTR hangs up the modem.
 	if not exec_AT_cmd("ATS10=60"):
 		print "Error: Failed to set S10 Register value..."
