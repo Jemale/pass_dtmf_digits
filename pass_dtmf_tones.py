@@ -154,7 +154,10 @@ def init_modem_settings():
 #=================================================================
 def exec_AT_cmd(modem_AT_cmd, expected_response="OK"):
 
-	global disable_modem_event_listener
+        print "\n=============================================="
+        print "Execute Command: " + modem_AT_cmd
+
+        global disable_modem_event_listener
 	disable_modem_event_listener = True
 
 	try:
@@ -180,7 +183,7 @@ def exec_AT_cmd(modem_AT_cmd, expected_response="OK"):
 #=================================================================
 # Read AT Command Response from the Modem
 #=================================================================
-def read_AT_cmd_response(expected_response="OK"):
+def read_AT_cmd_response(expected_response="OK", allow_timeout =True, test = False):
 
 	# Set the auto timeout interval
 	start_time = datetime.now()
@@ -188,19 +191,52 @@ def read_AT_cmd_response(expected_response="OK"):
 	try:
 		while 1:
 			# Read Modem Data on Serial Rx Pin
-			modem_response = analog_modem.readline()
-			print modem_response
-			# Recieved expected Response
+                        if test:
+                            modem_response = "R"
+                        else:
+			    modem_response = analog_modem.readline()
+
+                        if not expected_response:
+                            print "============================================"
+                            expected_response = "OK"
+
+                        if modem_response:
+                            print "Test\t" + modem_response
+                            stripped_response = modem_response.strip(' \t\n\r' + chr(16))
+                            print "\t\tStripped Response: " + modem_response.strip(' \t\n\r' + chr(16))
+                            print "\t\tTest for ring: " + str(("R" in modem_response and len(modem_response) < 3))
+                            print "\t\tR in modem_response : " + str(("R" in modem_response))
+                            print "\t\tlen(modem_resonse) < 3: "  + str((len(modem_response) < 5))
+                            print "\t\tlen(modem_response): " + str(len(modem_response))
+                            print "\t\tlen(stripped response): "+ str(len(stripped_response))
+
+
+                        if "R" in modem_response and len(modem_response) < 5:
+                            print "IDKK"
+                            return True
+
+                        if "RING" in modem_response.strip(' \t\n\r' + chr(16)):
+                            print("R ring?")
+                            return True
+
+                        if "R" in modem_response.strip(' \t\n\r' + chr(16)) and len(modem_response) < 5:
+                            print "ring?"
+                            return True
+
+                        # Recieved expected Response
 			if expected_response in modem_response.strip(' \t\n\r' + chr(16)):
-				return True
+                            print "Got expected response"
+                            return True
 			# Failed to execute the command successfully
 			elif "ERROR" in modem_response.strip(' \t\n\r' + chr(16)):
-				return False
+                            print "Returning false due to error"
+			    return False
 			elif "NO ANSWER" in modem_response.strip(' \t\n\r' + chr(16)):
-				return False
+                            print "Returning false due to no answer"
+			    return False
 			# Timeout
-			elif (datetime.now()-start_time).seconds > MODEM_RESPONSE_READ_TIMEOUT:
-				return False
+                        elif allow_timeout and ((datetime.now()-start_time).seconds > MODEM_RESPONSE_READ_TIMEOUT):
+			    return False
 
 
 	except:
@@ -331,16 +367,33 @@ def signal_door():
 
         # Sleep
 
+def run_test():
+    resp = read_AT_cmd_response(allow_timeout = False, test=True)
+    print "Response is : " + str(resp)
+
 def do_work():
+    #Try to put Modem in Voice Mode
+    if not exec_AT_cmd("AT+FCLASS=8", "OK"):
+        print "Failed to enter voice mode"
+        return
+
+    # Display result codes in verbose form
+    if not exec_AT_cmd("ATV1"):
+	print "Error: Unable set response in verbose form"
+
+
     while True:
-        resp = read_AT_cmd_response(allow_timeout = False)
+        resp = read_AT_cmd_response(expected_response = None, allow_timeout = False)
+        print "Response is : " + str(resp)
         if resp:
             print "Answering..."
-            if not exec_AT_cmd("ATA"):
+            if not exec_AT_cmd("AT+VLS=1"):
                 print "Error: Failed to answer call..."
 
             print "Pressing '6' ..."
-            pass_dtmf_digits("6")
+            if not exec_AT_cmd("AT+VTS=6"):
+			print "Error: Failed to press 6"
+
 
             print "Hanging up ..."
             if not exec_AT_cmd("ATH"):
@@ -381,4 +434,6 @@ atexit.register(close_modem_port)
 # dial_n_pass_dtmf(PHONE_NUMBER, DTMF_DIGITS)
 
 #count_rings()
+do_work()
 
+#run_test()
