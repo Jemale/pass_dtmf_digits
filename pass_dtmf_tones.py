@@ -1,4 +1,4 @@
-
+#!/usr/bin/env python2
 ##------------------------------------------
 ##--- Author: Pradeep Singh
 ##--- Blog: https://iotbytes.wordpress.com/send-dtmf-tones-with-raspberry-pi/
@@ -390,14 +390,20 @@ def do_work():
             if not exec_AT_cmd("AT+VLS=1"):
                 print "Error: Failed to answer call..."
 
+            time.sleep(1)
             print "Pressing '6' ..."
             if not exec_AT_cmd("AT+VTS=6"):
 			print "Error: Failed to press 6"
 
-
+            time.sleep(0.5)
             print "Hanging up ..."
+            if not exec_AT_cmd("AT+VLS=0"):
+                print "Error: Failed to hang up call (AT+VLS=0)..."
             if not exec_AT_cmd("ATH"):
-                print "Error: Failed to hang up call..."
+                print "Error: Failed to hang up call (ATH)..."
+
+            break
+
 
 #=================================================================
 # Close the Serial Port
@@ -421,11 +427,10 @@ def close_modem_port():
 		sys.exit()
 #=================================================================
 
+time.sleep(3)
+print "sys.argv[0]: " + str(sys.argv[0])
+print "sys.argv: "  +str( sys.argv)
 
-#close_modem_port()
-
-# Main Function
-init_modem_settings()
 
 # Close the Modem Port when the program terminates
 atexit.register(close_modem_port)
@@ -434,6 +439,22 @@ atexit.register(close_modem_port)
 # dial_n_pass_dtmf(PHONE_NUMBER, DTMF_DIGITS)
 
 #count_rings()
-do_work()
 
 #run_test()
+
+def main():
+    init_modem_settings()
+
+    do_work()
+
+    analog_modem.flushInput()
+    analog_modem.flushOutput()
+
+    close_modem_port()
+    print "Sleeping..."
+    time.sleep(2)
+    print "Restarting\n"
+    os.execv(sys.argv[0], sys.argv)
+
+if __name__ == "__main__":
+    main()
